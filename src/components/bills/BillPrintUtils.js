@@ -141,52 +141,71 @@ export const generateCompanyHeader = () => `
 
 export const printHtmlContent = (htmlContent) => {
     return new Promise((resolve) => {
-        // Create a hidden iframe - this is the ONLY reliable way to print
-        // specific content on Android Chrome. Using display:none on #root
-        // does NOT work because Android's print preview captures the full
-        // page layout regardless of CSS visibility.
-        const iframe = document.createElement('iframe');
-        iframe.style.cssText = 'position: fixed; width: 0; height: 0; border: none; left: -9999px; top: -9999px;';
-        iframe.id = 'print-iframe';
-        document.body.appendChild(iframe);
+        // Strategy: Open the bill in a new browser tab, then print from there.
+        // This is the most universally reliable approach across ALL Android phones.
+        //
+        // Why other approaches fail on Android:
+        //   - Hiding #root + window.print(): Android captures the full page layout
+        //   - iframe + document.write(): Some phones show "Failed to generate preview"
+        //   - iframe + Blob URL: Some WebViews block cross-origin iframe printing
+        //
+        // A new window/tab contains ONLY the bill HTML, so the print preview
+        // physically cannot show anything else.
 
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        iframeDoc.open();
-        iframeDoc.write(htmlContent);
-        iframeDoc.close();
+        // Use a Blob URL so the tab has a real URL (not about:blank)
+        const blob = new Blob([htmlContent], { type: 'text/html; charset=utf-8' });
+        const blobUrl = URL.createObjectURL(blob);
 
-        // Wait for content (including images) to load inside the iframe
-        const triggerPrint = () => {
-            try {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-            } catch (e) {
-                // Fallback: if iframe print fails (e.g., cross-origin),
-                // open content in a new tab
-                console.warn('Iframe print failed, falling back to new window:', e);
-                const printWindow = window.open('', '_blank');
-                if (printWindow) {
-                    printWindow.document.open();
-                    printWindow.document.write(htmlContent);
-                    printWindow.document.close();
-                    printWindow.focus();
-                    setTimeout(() => printWindow.print(), 500);
-                }
-            }
+        const printWindow = window.open(blobUrl, '_blank');
 
-            // Clean up the iframe after a delay to let the print dialog finish
+        if (printWindow) {
+            // Wait for the new tab to fully load, then trigger print
+            printWindow.onload = () => {
+                setTimeout(() => {
+                    printWindow.print();
+                    // Revoke the blob URL after printing (cleanup)
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+                    resolve();
+                }, 500);
+            };
+            // Fallback if onload doesn't fire (some browsers)
             setTimeout(() => {
-                if (document.body.contains(iframe)) {
-                    document.body.removeChild(iframe);
-                }
+                try { printWindow.print(); } catch (e) { /* already printing */ }
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
                 resolve();
-            }, 1000);
-        };
+            }, 2500);
+        } else {
+            // Popup was blocked - fall back to iframe approach
+            console.warn('Popup blocked, falling back to iframe printing');
+            URL.revokeObjectURL(blobUrl);
 
-        // Give the iframe time to render the content and load images
-        iframe.onload = () => setTimeout(triggerPrint, 300);
-        // Fallback if onload doesn't fire
-        setTimeout(triggerPrint, 1500);
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position: fixed; width: 0; height: 0; border: none; left: -9999px; top: -9999px;';
+            
+            const iframeBlob = new Blob([htmlContent], { type: 'text/html; charset=utf-8' });
+            const iframeBlobUrl = URL.createObjectURL(iframeBlob);
+            iframe.src = iframeBlobUrl;
+            
+            document.body.appendChild(iframe);
+
+            iframe.onload = () => {
+                setTimeout(() => {
+                    try {
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+                    } catch (e) {
+                        console.error('Iframe print also failed:', e);
+                    }
+                    setTimeout(() => {
+                        URL.revokeObjectURL(iframeBlobUrl);
+                        if (document.body.contains(iframe)) {
+                            document.body.removeChild(iframe);
+                        }
+                        resolve();
+                    }, 1000);
+                }, 300);
+            };
+        }
     });
 };
 
