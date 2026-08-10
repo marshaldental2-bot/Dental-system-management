@@ -928,17 +928,33 @@ const getWorkOrdersWithBatchInfo = async () => {
         console.log('Fetching work orders directly from the main table to ensure all data is included...');
         
         // Bypassing the faulty 'work_orders_with_batch_info' view and fetching from the source table.
-        const { data: workOrders, error } = await supabase
-            .from('work_orders')
-            .select('*') // This will correctly include the tooth_numbers column
-            .order('created_at', { ascending: false });
+        let workOrders = [];
+        let hasMore = true;
+        let from = 0;
+        const limit = 1000;
 
-        if (error) {
-            console.error('Supabase error fetching work orders:', error);
-            return { data: null, error };
+        while (hasMore) {
+            const { data, error } = await supabase
+                .from('work_orders')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .range(from, from + limit - 1);
+
+            if (error) {
+                console.error('Supabase error fetching work orders:', error);
+                return { data: null, error };
+            }
+
+            if (data && data.length > 0) {
+                workOrders = [...workOrders, ...data];
+                from += limit;
+                hasMore = data.length === limit;
+            } else {
+                hasMore = false;
+            }
         }
 
-        if (!workOrders) {
+        if (workOrders.length === 0) {
             console.log('No work orders found.');
             return { data: [], error: null };
         }
