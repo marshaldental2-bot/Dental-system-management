@@ -22,6 +22,9 @@ const MonthlyBillingPage = () => {
     const [mergeSourceDoctor, setMergeSourceDoctor] = useState('');
     const [mergeTargetDoctor, setMergeTargetDoctor] = useState('');
     const [mergeLoading, setMergeLoading] = useState(false);
+    const [monthlySummary, setMonthlySummary] = useState([]);
+    const [summaryLoading, setSummaryLoading] = useState(false);
+    const [showSummary, setShowSummary] = useState(false);
     
     const navigate = useNavigate();
 
@@ -371,6 +374,50 @@ const MonthlyBillingPage = () => {
             setMessage('Error loading work orders: ' + error.message);
         }
         setLoading(false);
+    };
+
+    const loadMonthlySummary = async () => {
+        if (!selectedMonth) return;
+
+        setSummaryLoading(true);
+        setShowSummary(true);
+        try {
+            const response = await dentalLabService.getAllWorkOrders();
+            if (response.data) {
+                const [year, month] = selectedMonth.split('-');
+
+                // Filter all completed orders for the selected month
+                const monthOrders = response.data.filter(order => {
+                    const orderDate = new Date(order.completion_date);
+                    return order.status === 'completed' &&
+                           orderDate.getFullYear() === parseInt(year) &&
+                           orderDate.getMonth() === parseInt(month) - 1;
+                });
+
+                // Group by doctor name (normalized)
+                const doctorMap = {};
+                monthOrders.forEach(order => {
+                    const doctorName = order.doctor_name || 'Unknown';
+                    if (!doctorMap[doctorName]) {
+                        doctorMap[doctorName] = { doctorName, orders: 0, totalAmount: 0, teethCount: 0 };
+                    }
+                    doctorMap[doctorName].orders += 1;
+                    doctorMap[doctorName].totalAmount += parseFloat(order.amount || 0);
+                    doctorMap[doctorName].teethCount += countTeeth(order.tooth_numbers);
+                });
+
+                // Sort by doctor name
+                const summary = Object.values(doctorMap).sort((a, b) =>
+                    a.doctorName.localeCompare(b.doctorName)
+                );
+
+                setMonthlySummary(summary);
+            }
+        } catch (error) {
+            console.error('Error loading monthly summary:', error);
+            setMessage('Error loading monthly summary: ' + error.message);
+        }
+        setSummaryLoading(false);
     };
 
     const calculateTotal = (pricingData) => {
@@ -1053,17 +1100,107 @@ table {
                                         </div>
                                         <div className="col-md-4">
                                             <label className="form-label">&nbsp;</label>
+                                            <div className="d-flex gap-2">
+                                                <button
+                                                    className="btn btn-primary flex-grow-1"
+                                                    onClick={loadWorkOrdersForMonth}
+                                                    disabled={!selectedDoctor || !selectedMonth || loading}
+                                                >
+                                                    {loading ? 'Loading...' : 'Load Orders'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="row mt-3">
+                                        <div className="col-12">
                                             <button
-                                                className="btn btn-primary w-100"
-                                                onClick={loadWorkOrdersForMonth}
-                                                disabled={!selectedDoctor || !selectedMonth || loading}
+                                                className="btn btn-outline-success w-100"
+                                                onClick={loadMonthlySummary}
+                                                disabled={!selectedMonth || summaryLoading}
                                             >
-                                                {loading ? 'Loading...' : 'Load Orders'}
+                                                {summaryLoading ? (
+                                                    <><span className="spinner-border spinner-border-sm me-2" role="status"></span>Loading all doctors...</>
+                                                ) : (
+                                                    <>📊 Load All Doctors Summary for {new Date(selectedMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</>
+                                                )}
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Monthly Summary Table */}
+                            {showSummary && (
+                                <div className="card mb-4">
+                                    <div className="card-header d-flex justify-content-between align-items-center" style={{ background: 'linear-gradient(135deg, #28a745, #20c997)', color: 'white' }}>
+                                        <h6 className="mb-0">📊 All Doctors Summary — {new Date(selectedMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h6>
+                                        <div>
+                                            <span className="badge bg-light text-dark me-2">{monthlySummary.length} doctors</span>
+                                            <span className="badge bg-light text-dark me-2">{monthlySummary.reduce((s, d) => s + d.orders, 0)} orders</span>
+                                            <span className="badge bg-warning text-dark">₹{monthlySummary.reduce((s, d) => s + d.totalAmount, 0).toFixed(2)}</span>
+                                            <button className="btn btn-sm btn-outline-light ms-3" onClick={() => setShowSummary(false)}>✕</button>
+                                        </div>
+                                    </div>
+                                    <div className="card-body p-0">
+                                        {summaryLoading ? (
+                                            <div className="text-center py-4">
+                                                <div className="spinner-border text-success" role="status"></div>
+                                                <p className="mt-2 text-muted">Loading all doctors for this month...</p>
+                                            </div>
+                                        ) : monthlySummary.length === 0 ? (
+                                            <div className="text-center text-muted py-4">
+                                                <p className="mb-0">No completed orders found for this month.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="table-responsive">
+                                                <table className="table table-hover table-striped mb-0">
+                                                    <thead className="table-dark">
+                                                        <tr>
+                                                            <th>#</th>
+                                                            <th>Doctor Name</th>
+                                                            <th className="text-center">Orders</th>
+                                                            <th className="text-center">Teeth</th>
+                                                            <th className="text-end">Total Amount (₹)</th>
+                                                            <th className="text-center">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {monthlySummary.map((doc, idx) => (
+                                                            <tr key={doc.doctorName}>
+                                                                <td>{idx + 1}</td>
+                                                                <td><strong>{doc.doctorName}</strong></td>
+                                                                <td className="text-center"><span className="badge bg-info">{doc.orders}</span></td>
+                                                                <td className="text-center">{doc.teethCount}</td>
+                                                                <td className="text-end">₹{doc.totalAmount.toFixed(2)}</td>
+                                                                <td className="text-center">
+                                                                    <button
+                                                                        className="btn btn-sm btn-outline-primary"
+                                                                        onClick={() => {
+                                                                            setSelectedDoctor(doc.doctorName);
+                                                                            setShowSummary(false);
+                                                                            setTimeout(() => loadWorkOrdersForMonth(), 100);
+                                                                        }}
+                                                                    >
+                                                                        View Orders →
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                        <tr className="table-success fw-bold">
+                                                            <td></td>
+                                                            <td>TOTAL</td>
+                                                            <td className="text-center">{monthlySummary.reduce((s, d) => s + d.orders, 0)}</td>
+                                                            <td className="text-center">{monthlySummary.reduce((s, d) => s + d.teethCount, 0)}</td>
+                                                            <td className="text-end">₹{monthlySummary.reduce((s, d) => s + d.totalAmount, 0).toFixed(2)}</td>
+                                                            <td></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Work Orders Table */}
                             {workOrders.length > 0 && (
