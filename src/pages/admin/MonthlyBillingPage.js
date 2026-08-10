@@ -18,6 +18,10 @@ const MonthlyBillingPage = () => {
     const [totalAmount, setTotalAmount] = useState(0);
     const [isAdmin, setIsAdmin] = useState(false);
     const [billsHistory, setBillsHistory] = useState([]);
+    const [showMergeModal, setShowMergeModal] = useState(false);
+    const [mergeSourceDoctor, setMergeSourceDoctor] = useState('');
+    const [mergeTargetDoctor, setMergeTargetDoctor] = useState('');
+    const [mergeLoading, setMergeLoading] = useState(false);
     
     const navigate = useNavigate();
 
@@ -247,6 +251,38 @@ const MonthlyBillingPage = () => {
             }
         } catch (error) {
             console.error('Error loading doctors:', error);
+        }
+    };
+
+    const handleMergeDoctors = async () => {
+        if (!mergeSourceDoctor || !mergeTargetDoctor) {
+            setMessage('Error: Please enter both a source and target doctor name.');
+            return;
+        }
+        if (mergeSourceDoctor === mergeTargetDoctor) {
+            setMessage('Error: Source and target doctors cannot be the same.');
+            return;
+        }
+
+        setMergeLoading(true);
+        const result = await dentalLabService.mergeDoctors(mergeSourceDoctor, mergeTargetDoctor);
+        setMergeLoading(false);
+
+        if (result.success) {
+            setMessage(`Success: Merged ${result.count} records from ${mergeSourceDoctor} to ${mergeTargetDoctor}.`);
+            setShowMergeModal(false);
+            setMergeSourceDoctor('');
+            setMergeTargetDoctor('');
+            
+            // Reload doctors
+            loadDoctors();
+            
+            // Adjust current selection if necessary
+            if (selectedDoctor === mergeSourceDoctor) {
+                setSelectedDoctor(mergeTargetDoctor);
+            }
+        } else {
+            setMessage(`Error merging doctors: ${result.error}`);
         }
     };
 
@@ -991,17 +1027,29 @@ table {
                                             />
                                         </div>
                                         <div className="col-md-4">
-                                            <label className="form-label">Select Doctor</label>
-                                            <select
+                                            <div className="d-flex justify-content-between align-items-center mb-2">
+                                                <label className="form-label mb-0">Select Doctor</label>
+                                                <button 
+                                                    className="btn btn-sm btn-link p-0 text-decoration-none" 
+                                                    onClick={() => setShowMergeModal(true)}
+                                                    title="Merge misspelled doctor names"
+                                                >
+                                                    <small>🛠️ Merge Doctors</small>
+                                                </button>
+                                            </div>
+                                            <input
+                                                type="text"
                                                 className="form-control"
+                                                list="doctor-search-list"
+                                                placeholder="Type or select doctor..."
                                                 value={selectedDoctor}
                                                 onChange={(e) => setSelectedDoctor(e.target.value)}
-                                            >
-                                                <option value="">Choose Doctor...</option>
+                                            />
+                                            <datalist id="doctor-search-list">
                                                 {doctors.map(doctor => (
-                                                    <option key={doctor} value={doctor}>{doctor}</option>
+                                                    <option key={doctor} value={doctor} />
                                                 ))}
-                                            </select>
+                                            </datalist>
                                         </div>
                                         <div className="col-md-4">
                                             <label className="form-label">&nbsp;</label>
@@ -1175,6 +1223,66 @@ table {
                     </div>
                 </div>
             </div>
+            {/* Merge Doctors Modal */}
+            {showMergeModal && (
+                <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex="-1">
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">🛠️ Merge Doctor Records</h5>
+                                <button type="button" className="btn-close" onClick={() => setShowMergeModal(false)}></button>
+                            </div>
+                            <div className="modal-body">
+                                <p className="text-muted small mb-3">
+                                    Use this tool to merge a misspelled doctor's name into the correct name. This will update all their past work orders to the correct name.
+                                </p>
+                                
+                                <div className="mb-3">
+                                    <label className="form-label text-danger fw-bold">From (Misspelled Name)</label>
+                                    <select 
+                                        className="form-select"
+                                        value={mergeSourceDoctor}
+                                        onChange={(e) => setMergeSourceDoctor(e.target.value)}
+                                    >
+                                        <option value="">Select Wrong Name...</option>
+                                        {doctors.map(doctor => (
+                                            <option key={doctor} value={doctor}>{doctor}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="mb-3">
+                                    <label className="form-label text-success fw-bold">To (Correct Name)</label>
+                                    <input 
+                                        type="text"
+                                        className="form-control"
+                                        list="correct-doctors-list"
+                                        placeholder="Type or select correct name..."
+                                        value={mergeTargetDoctor}
+                                        onChange={(e) => setMergeTargetDoctor(e.target.value)}
+                                    />
+                                    <datalist id="correct-doctors-list">
+                                        {doctors.filter(d => d !== mergeSourceDoctor).map(doctor => (
+                                            <option key={doctor} value={doctor} />
+                                        ))}
+                                    </datalist>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowMergeModal(false)}>Cancel</button>
+                                <button 
+                                    type="button" 
+                                    className="btn btn-primary" 
+                                    onClick={handleMergeDoctors}
+                                    disabled={mergeLoading || !mergeSourceDoctor || !mergeTargetDoctor}
+                                >
+                                    {mergeLoading ? 'Merging...' : 'Merge Records'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

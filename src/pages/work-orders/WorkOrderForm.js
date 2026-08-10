@@ -203,9 +203,7 @@ const WorkOrderForm = ({ isAdmin = false }) => {
             errors.product_quality = 'Product quality is required';
         }
         
-        if (!formData.product_shade.trim()) {
-            errors.product_shade = 'Product shade is required';
-        }
+
         
         if (!formData.order_date) {
             errors.order_date = 'Order date is required';
@@ -445,7 +443,7 @@ const WorkOrderForm = ({ isAdmin = false }) => {
                                     </div>
                                     <div className="col-md-6">
                                         <div className="mb-3">
-                                            <label className="form-label">Product Shade *</label>
+                                            <label className="form-label">Product Shade</label>
                                             <div className="position-relative">
                                                 <input
                                                     type="text"

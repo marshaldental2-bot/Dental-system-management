@@ -2036,5 +2036,37 @@ getWorkOrdersWithBatchInfo,
             console.error('Error in deleteTrial:', error);
             return { success: false, error: error.message };
         }
+    },
+
+    mergeDoctors: async (oldDoctorName, newDoctorName) => {
+        try {
+            if (!oldDoctorName || !newDoctorName) {
+                return { success: false, error: 'Both old and new doctor names are required.' };
+            }
+
+            const userId = await authService.getUserId();
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            console.log('Merging doctor names:', { oldDoctorName, newDoctorName });
+
+            const { data, error } = await supabase
+                .from('work_orders')
+                .update({ doctor_name: newDoctorName })
+                .eq('doctor_name', oldDoctorName)
+                .select();
+
+            if (error) {
+                console.error('Error merging doctors:', error);
+                return { success: false, error: error.message };
+            }
+
+            console.log('Doctors merged successfully:', data);
+            return { success: true, count: data ? data.length : 0 };
+        } catch (error) {
+            console.error('Error in mergeDoctors:', error);
+            return { success: false, error: error.message };
+        }
     }
 };
