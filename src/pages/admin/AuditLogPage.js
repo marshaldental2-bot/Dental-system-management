@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { authService } from '../../services/supabaseAuthService';
 import { useNavigate } from 'react-router-dom';

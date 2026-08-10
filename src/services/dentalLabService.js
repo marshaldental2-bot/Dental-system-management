@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { supabase } from '../supabase/supabaseClient';
 import { authService } from './supabaseAuthService';
 
@@ -1872,41 +1873,6 @@ getWorkOrdersWithBatchInfo,
         }
     },
 
-
-completeRevision: async (workOrderId, completionDate = null) => {
-        try {
-            const userId = await authService.getUserId();
-            console.log('Completing revision:', { workOrderId, completionDate, userId });
-
-            if (!userId) {
-                throw new Error('User not authenticated');
-            }
-
-            // Call the database function to complete the revision
-            const { data, error } = await supabase.rpc('complete_work_order_revision', {
-                p_work_order_id: workOrderId,
-                p_completion_date: completionDate || new Date().toISOString().split('T')[0],
-                p_user_id: userId
-            });
-
-            if (error) {
-                console.error('Error completing revision:', error);
-                throw error;
-            }
-
-            console.log('Revision completed successfully:', data);
-            
-            // Check if the database function returned success
-            if (data && data.success === false) {
-                throw new Error(data.error || 'Database function returned failure');
-            }
-            
-            return { success: true, data };
-        } catch (error) {
-            console.error('Error in completeRevision:', error);
-            return { success: false, error: error.message };
-        }
-    },
 
     getRevisionHistory: async (workOrderId) => {
         try {

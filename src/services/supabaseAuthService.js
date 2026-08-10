@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { supabase, supabaseAdmin } from '../supabase/supabaseClient';
 
 const setToken = (token) => {

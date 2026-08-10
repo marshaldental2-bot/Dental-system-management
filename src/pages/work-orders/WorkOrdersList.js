@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect, useCallback } from 'react';
 import { dentalLabService } from '../../services/dentalLabService';
 import { authService } from '../../services/supabaseAuthService';

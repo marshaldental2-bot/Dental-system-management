@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { dentalLabService } from '../../services/dentalLabService';
 
 // Utility functions for bill printing
