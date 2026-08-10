@@ -203,13 +203,9 @@ export const printHtmlContent = (htmlContent) => {
         
         closeBtn.onclick = cleanup;
 
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        // Android Chrome fires 'afterprint' immediately, destroying the print preview.
-        // So on mobile, we rely exclusively on the manual close button!
-        if (!isMobile) {
-            window.addEventListener('afterprint', cleanup);
-        }
+        // We removed the unreliable `afterprint` event completely!
+        // Android Chrome fires it immediately (destroying the preview), and user agents can be spoofed (e.g., Desktop site mode).
+        // By relying exclusively on the manual 'Close Print View' button, we guarantee 100% reliable printing across all devices and modes!
 
         // Wait for images to load before triggering print
         setTimeout(() => {
