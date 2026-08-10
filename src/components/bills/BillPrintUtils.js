@@ -141,76 +141,52 @@ export const generateCompanyHeader = () => `
 
 export const printHtmlContent = (htmlContent) => {
     return new Promise((resolve) => {
-        const rootNode = document.getElementById('root');
-        
-        // Hide the main app manually so the print dialog has no choice but to print our container
-        if (rootNode) {
-            rootNode.style.display = 'none';
-        }
+        // Create a hidden iframe - this is the ONLY reliable way to print
+        // specific content on Android Chrome. Using display:none on #root
+        // does NOT work because Android's print preview captures the full
+        // page layout regardless of CSS visibility.
+        const iframe = document.createElement('iframe');
+        iframe.style.cssText = 'position: fixed; width: 0; height: 0; border: none; left: -9999px; top: -9999px;';
+        iframe.id = 'print-iframe';
+        document.body.appendChild(iframe);
 
-        // Create container for print content
-        const printContainer = document.createElement('div');
-        printContainer.id = 'mobile-print-container';
-        
-        // Wrap content to safely inject
-        const wrapper = document.createElement('div');
-        wrapper.innerHTML = htmlContent;
-        printContainer.appendChild(wrapper);
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(htmlContent);
+        iframeDoc.close();
 
-        // Add a manual close button just in case the mobile browser gets stuck
-        const closeBtn = document.createElement('button');
-        closeBtn.innerHTML = '❌ Close Print View';
-        closeBtn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; background: #dc3545; color: white; border: none; border-radius: 8px; font-weight: bold; z-index: 999999; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 16px;';
-        printContainer.appendChild(closeBtn);
+        // Wait for content (including images) to load inside the iframe
+        const triggerPrint = () => {
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            } catch (e) {
+                // Fallback: if iframe print fails (e.g., cross-origin),
+                // open content in a new tab
+                console.warn('Iframe print failed, falling back to new window:', e);
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                    printWindow.document.open();
+                    printWindow.document.write(htmlContent);
+                    printWindow.document.close();
+                    printWindow.focus();
+                    setTimeout(() => printWindow.print(), 500);
+                }
+            }
 
-        // Add print-specific styles to format the container and hide the close button during print
-        const printStyle = document.createElement('style');
-        printStyle.id = 'mobile-print-style';
-        printStyle.innerHTML = `
-            #mobile-print-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                min-height: 100vh;
-                background: white;
-                z-index: 99999;
-            }
-            @media print {
-                button { display: none !important; }
-            }
-        `;
-        
-        document.head.appendChild(printStyle);
-        document.body.appendChild(printContainer);
-
-        let cleanedUp = false;
-        const cleanup = () => {
-            if (cleanedUp) return;
-            cleanedUp = true;
-            if (document.body.contains(printContainer)) {
-                document.body.removeChild(printContainer);
-            }
-            if (document.head.contains(printStyle)) {
-                document.head.removeChild(printStyle);
-            }
-            if (rootNode) {
-                rootNode.style.display = '';
-            }
-            window.removeEventListener('afterprint', cleanup);
-            resolve();
+            // Clean up the iframe after a delay to let the print dialog finish
+            setTimeout(() => {
+                if (document.body.contains(iframe)) {
+                    document.body.removeChild(iframe);
+                }
+                resolve();
+            }, 1000);
         };
-        
-        closeBtn.onclick = cleanup;
 
-        // We removed the unreliable `afterprint` event completely!
-        // Android Chrome fires it immediately (destroying the preview), and user agents can be spoofed (e.g., Desktop site mode).
-        // By relying exclusively on the manual 'Close Print View' button, we guarantee 100% reliable printing across all devices and modes!
-
-        // Wait for images to load before triggering print
-        setTimeout(() => {
-            window.print();
-        }, 500);
+        // Give the iframe time to render the content and load images
+        iframe.onload = () => setTimeout(triggerPrint, 300);
+        // Fallback if onload doesn't fire
+        setTimeout(triggerPrint, 1500);
     });
 };
 
