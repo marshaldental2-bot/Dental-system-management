@@ -454,7 +454,6 @@ const WorkOrderForm = ({ isAdmin = false }) => {
                                                     onFocus={handleShadeFocus}
                                                     onBlur={handleShadeBlur}
                                                     placeholder="e.g., A1, B2, 2M1, A1+A2..."
-                                                    required
                                                     autoComplete="off"
                                                 />
                                                 {showShadeSuggestions && filteredShadeSuggestions.length > 0 && (
