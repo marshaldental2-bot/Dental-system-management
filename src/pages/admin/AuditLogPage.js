@@ -97,11 +97,11 @@ const AuditLogPage = () => {
             <div className="row">
                 <div className="col-12">
                     <div className="card">
-                        <div className="card-header d-flex justify-content-between align-items-center">
-                            <h4>🔍 Admin Audit Log</h4>
-                            <div>
+                        <div className="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 gap-md-0">
+                            <h4 className="mb-0">🔍 Admin Audit Log</h4>
+                            <div className="d-grid gap-2 d-md-flex">
                                 <button 
-                                    className="btn btn-outline-secondary me-2"
+                                    className="btn btn-outline-secondary"
                                     onClick={() => navigate('/admin-dashboard')}
                                 >
                                     Back to Dashboard

@@ -721,3 +721,36 @@ tr.selected-row {
 .bg-light {
     background-color: #f8f9fa !important;
 }
+
+/* Global Mobile Responsiveness Tweaks */
+@media (max-width: 768px) {
+    /* Scale down headings to prevent cramped layouts */
+    h1, .h1 { font-size: 1.5rem !important; }
+    h2, .h2 { font-size: 1.25rem !important; }
+    h3, .h3 { font-size: 1.15rem !important; }
+    h4, .h4 { font-size: 1.05rem !important; }
+    h5, .h5 { font-size: 1rem !important; }
+    
+    /* Reduce container padding on mobile to save screen real estate */
+    .container {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+    
+    /* Reduce card padding on mobile */
+    .card-body {
+        padding: 0.75rem !important;
+    }
+    
+    /* Ensure action buttons in cards stretch on mobile */
+    .btn-group.mobile-flex {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+        gap: 0.25rem;
+    }
+    .btn-group.mobile-flex > .btn {
+        flex: 1 1 auto;
+        border-radius: 4px !important;
+    }
+}

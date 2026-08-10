@@ -50,6 +50,7 @@ const WorkOrderForm = ({ isAdmin = false }) => {
     ];
 
     const [formData, setFormData] = useState({
+        serial_number: '',
         doctor_name: '',
         patient_name: '',
         product_quality: '',
@@ -184,6 +185,10 @@ const WorkOrderForm = ({ isAdmin = false }) => {
 
     const validateForm = () => {
         const errors = {};
+        
+        if (!formData.serial_number.trim()) {
+            errors.serial_number = 'Job Number is required';
+        }
         
         if (!formData.doctor_name.trim()) {
             errors.doctor_name = 'Doctor name is required';
@@ -341,6 +346,27 @@ const WorkOrderForm = ({ isAdmin = false }) => {
                             </div>
 
                             <form onSubmit={handleSubmit}>
+                                <div className="row">
+                                    <div className="col-md-12">
+                                        <div className="mb-3">
+                                            <label className="form-label">Job Number *</label>
+                                            <input
+                                                type="text"
+                                                className={`form-control ${showValidation && validationErrors.serial_number ? 'is-invalid' : ''}`}
+                                                name="serial_number"
+                                                value={formData.serial_number}
+                                                onChange={handleInputChange}
+                                                placeholder="e.g. 1004"
+                                                required
+                                            />
+                                            {showValidation && validationErrors.serial_number && (
+                                                <div className="invalid-feedback">
+                                                    {validationErrors.serial_number}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                                 <div className="row">
                                     <div className="col-md-6">
                                         <div className="mb-3">

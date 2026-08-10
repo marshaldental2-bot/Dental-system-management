@@ -117,10 +117,10 @@ const UserManagementPage = () => {
         <div className="container mt-5">
             <div className="row">
                 <div className="col-12">
-                    <div className="d-flex justify-content-between align-items-center mb-4">
-                        <h2>User Management Panel</h2>
-                        <div>
-                            <button className="btn btn-secondary me-2" onClick={() => navigate('/admin-dashboard')}>
+                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
+                        <h2 className="mb-0">User Management Panel</h2>
+                        <div className="d-grid gap-2 d-md-flex">
+                            <button className="btn btn-secondary" onClick={() => navigate('/admin-dashboard')}>
                                 Back to Dashboard
                             </button>
                             <button className="btn btn-danger" onClick={logout}>

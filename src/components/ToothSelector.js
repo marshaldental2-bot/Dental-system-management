@@ -64,6 +64,47 @@ const ToothSelector = ({ selectedTeeth, onTeethChange, disabled = false, patient
         return byQuadrant;
     };
 
+    const archCoordinates = {
+        // Upper Right (Patient's right, left side of screen)
+        18: { left: '10%', top: '43%' }, 17: { left: '11%', top: '36%' }, 16: { left: '13%', top: '28%' }, 15: { left: '16%', top: '21%' },
+        14: { left: '21%', top: '15%' }, 13: { left: '27%', top: '9%' }, 12: { left: '35%', top: '5%' }, 11: { left: '44%', top: '3%' },
+        // Upper Left (Patient's left, right side of screen)
+        21: { left: '56%', top: '3%' }, 22: { left: '65%', top: '5%' }, 23: { left: '73%', top: '9%' }, 24: { left: '79%', top: '15%' },
+        25: { left: '84%', top: '21%' }, 26: { left: '87%', top: '28%' }, 27: { left: '89%', top: '36%' }, 28: { left: '90%', top: '43%' },
+        
+        // Lower Right (Patient's right, left side of screen)
+        48: { left: '10%', top: '57%' }, 47: { left: '11%', top: '64%' }, 46: { left: '13%', top: '72%' }, 45: { left: '16%', top: '79%' },
+        44: { left: '21%', top: '85%' }, 43: { left: '27%', top: '91%' }, 42: { left: '35%', top: '95%' }, 41: { left: '44%', top: '97%' },
+        // Lower Left (Patient's left, right side of screen)
+        31: { left: '56%', top: '97%' }, 32: { left: '65%', top: '95%' }, 33: { left: '73%', top: '91%' }, 34: { left: '79%', top: '85%' },
+        35: { left: '84%', top: '79%' }, 36: { left: '87%', top: '72%' }, 37: { left: '89%', top: '64%' }, 38: { left: '90%', top: '57%' }
+    };
+
+    const renderTooth = (toothNumber, isUpper) => {
+        const coords = archCoordinates[toothNumber];
+        if (!coords) return null;
+        
+        const isSelected = selectedTeeth.includes(toothNumber);
+        // Add shape classes based on tooth type
+        let shapeClass = 'tooth-incisor';
+        if ([14, 15, 24, 25, 34, 35, 44, 45].includes(toothNumber)) shapeClass = 'tooth-premolar';
+        if ([16, 17, 18, 26, 27, 28, 36, 37, 38, 46, 47, 48].includes(toothNumber)) shapeClass = 'tooth-molar';
+
+        return (
+            <button
+                key={toothNumber}
+                type="button"
+                className={`tooth-btn ${shapeClass} ${isUpper ? 'upper-tooth' : 'lower-tooth'} ${isSelected ? 'selected' : ''}`}
+                style={{ left: coords.left, top: coords.top }}
+                onClick={() => toggleTooth(toothNumber)}
+                disabled={disabled}
+                title={`Tooth ${toothNumber} (${getToothName(toothNumber)})`}
+            >
+                {toothNumber}
+            </button>
+        );
+    };
+
     return (
         <div className="tooth-selector">
             {/* Patient Context Header */}
@@ -118,80 +159,18 @@ const ToothSelector = ({ selectedTeeth, onTeethChange, disabled = false, patient
             </div>
 
             {inputMode === 'visual' ? (
-                <div className="dental-chart">
-                    {/* Upper Jaw */}
-                    <div className="jaw upper-jaw">
-                        <div className="quadrant upper-right">
-                            <div className="quadrant-label">Upper Right</div>
-                            <div className="teeth-row">
-                                {quadrants.upperRight.teeth.map(toothNumber => (
-                                    <button
-                                        key={toothNumber}
-                                        type="button"
-                                        className={`tooth-btn ${selectedTeeth.includes(toothNumber) ? 'selected' : ''}`}
-                                        onClick={() => toggleTooth(toothNumber)}
-                                        disabled={disabled}
-                                        title={`Tooth ${toothNumber} (${getToothName(toothNumber)})`}
-                                    >
-                                        {toothNumber}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="quadrant upper-left">
-                            <div className="quadrant-label">Upper Left</div>
-                            <div className="teeth-row">
-                                {quadrants.upperLeft.teeth.map(toothNumber => (
-                                    <button
-                                        key={toothNumber}
-                                        type="button"
-                                        className={`tooth-btn ${selectedTeeth.includes(toothNumber) ? 'selected' : ''}`}
-                                        onClick={() => toggleTooth(toothNumber)}
-                                        disabled={disabled}
-                                        title={`Tooth ${toothNumber} (${getToothName(toothNumber)})`}
-                                    >
-                                        {toothNumber}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Lower Jaw */}
-                    <div className="jaw lower-jaw">
-                        <div className="quadrant lower-right">
-                            <div className="quadrant-label">Lower Right</div>
-                            <div className="teeth-row">
-                                {quadrants.lowerRight.teeth.map(toothNumber => (
-                                    <button
-                                        key={toothNumber}
-                                        type="button"
-                                        className={`tooth-btn ${selectedTeeth.includes(toothNumber) ? 'selected' : ''}`}
-                                        onClick={() => toggleTooth(toothNumber)}
-                                        disabled={disabled}
-                                        title={`Tooth ${toothNumber} (${getToothName(toothNumber)})`}
-                                    >
-                                        {toothNumber}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="quadrant lower-left">
-                            <div className="quadrant-label">Lower Left</div>
-                            <div className="teeth-row">
-                                {quadrants.lowerLeft.teeth.map(toothNumber => (
-                                    <button
-                                        key={toothNumber}
-                                        type="button"
-                                        className={`tooth-btn ${selectedTeeth.includes(toothNumber) ? 'selected' : ''}`}
-                                        onClick={() => toggleTooth(toothNumber)}
-                                        disabled={disabled}
-                                        title={`Tooth ${toothNumber} (${getToothName(toothNumber)})`}
-                                    >
-                                        {toothNumber}
-                                    </button>
-                                ))}
-                            </div>
+                <div className="dental-chart text-center">
+                    <div className="mouth-container">
+                        {/* Upper Jaw (11-18, 21-28) */}
+                        {quadrants.upperRight.teeth.map(t => renderTooth(t, true))}
+                        {quadrants.upperLeft.teeth.map(t => renderTooth(t, true))}
+                        
+                        {/* Lower Jaw (41-48, 31-38) */}
+                        {quadrants.lowerRight.teeth.map(t => renderTooth(t, false))}
+                        {quadrants.lowerLeft.teeth.map(t => renderTooth(t, false))}
+                        
+                        <div className="mouth-center-label">
+                            <span className="text-muted">Top</span>
                         </div>
                     </div>
                 </div>

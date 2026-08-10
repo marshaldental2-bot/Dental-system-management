@@ -68,11 +68,18 @@ const StaffDashboard = () => {
                     return o.status === 'Revision in Progress' || o.status === 'revision_in_progress';
                 }).length;
                 
-                // Calculate overdue orders (past expected completion date)
+                // Calculate overdue orders (past expected completion date, or > 7 days old)
                 const overdue = allOrders.filter(o => {
-                    if (!o.expected_complete_date || o.status === 'completed') return false;
-                    const expectedDate = new Date(o.expected_complete_date);
-                    return expectedDate < today;
+                    if (o.status === 'completed' || o.status === 'cancelled') return false;
+                    if (o.expected_complete_date) {
+                        const expectedDate = new Date(o.expected_complete_date);
+                        return expectedDate < today;
+                    } else if (o.order_date) {
+                        const orderDate = new Date(o.order_date);
+                        const daysOld = (today - orderDate) / (1000 * 60 * 60 * 24);
+                        return daysOld > 7;
+                    }
+                    return false;
                 }).length;
                 
                 // Recent orders (this week)
@@ -176,27 +183,27 @@ const StaffDashboard = () => {
 
                         {/* Primary Stats Row */}
                         <div className="row">
-                            <div className="col-md-4 mb-3">
-                                <div className="card text-center bg-primary text-white h-100">
-                                    <div className="card-body">
-                                        <h3>{loading ? '...' : workOrderStats.total}</h3>
-                                        <p className="mb-0">Total Orders</p>
+                            <div className="col-6 col-md-4 mb-3">
+                                <div className="card text-center bg-primary text-white h-100 p-2 p-md-3">
+                                    <div className="card-body p-2">
+                                        <h3 className="mb-1">{loading ? '...' : workOrderStats.total}</h3>
+                                        <p className="mb-0 small">Total Orders</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="col-md-4 mb-3">
-                                <div className="card text-center bg-warning text-dark h-100">
-                                    <div className="card-body">
-                                        <h3>{loading ? '...' : workOrderStats.inProgress}</h3>
-                                        <p className="mb-0">Orders In Progress</p>
+                            <div className="col-6 col-md-4 mb-3">
+                                <div className="card text-center bg-warning text-dark h-100 p-2 p-md-3">
+                                    <div className="card-body p-2">
+                                        <h3 className="mb-1">{loading ? '...' : workOrderStats.inProgress}</h3>
+                                        <p className="mb-0 small">Orders In Progress</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="col-md-4 mb-3">
-                                <div className="card text-center bg-success text-white h-100">
-                                    <div className="card-body">
-                                        <h3>{loading ? '...' : workOrderStats.completed}</h3>
-                                        <p className="mb-0">Orders Completed</p>
+                            <div className="col-6 col-md-4 mb-3">
+                                <div className="card text-center bg-success text-white h-100 p-2 p-md-3">
+                                    <div className="card-body p-2">
+                                        <h3 className="mb-1">{loading ? '...' : workOrderStats.completed}</h3>
+                                        <p className="mb-0 small">Orders Completed</p>
                                     </div>
                                 </div>
                             </div>
@@ -204,30 +211,27 @@ const StaffDashboard = () => {
 
                         {/* Secondary Stats Row */}
                         <div className="row">
-                            <div className="col-md-4 mb-3">
-                                <div className="card text-center bg-danger text-white h-100" title="Orders marked as urgent that need immediate attention">
-                                    <div className="card-body">
-                                        <h4>{loading ? '...' : workOrderStats.urgent}</h4>
-                                        <p className="mb-0">🚨 Urgent Orders</p>
-                                        <small className="text-light opacity-75">Need immediate attention</small>
+                            <div className="col-6 col-md-4 mb-3">
+                                <div className="card text-center bg-danger text-white h-100 p-2 p-md-3" title="Orders marked as urgent that need immediate attention">
+                                    <div className="card-body p-2">
+                                        <h4 className="mb-1">{loading ? '...' : workOrderStats.urgent}</h4>
+                                        <p className="mb-0 small">🚨 Urgent</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="col-md-4 mb-3">
-                                <div className="card text-center bg-secondary text-white h-100" title="Orders past their expected completion date">
-                                    <div className="card-body">
-                                        <h4>{loading ? '...' : workOrderStats.overdue}</h4>
-                                        <p className="mb-0">⏰ Overdue Orders</p>
-                                        <small className="text-light opacity-75">Past due date</small>
+                            <div className="col-6 col-md-4 mb-3">
+                                <div className="card text-center bg-secondary text-white h-100 p-2 p-md-3" title="Orders past their expected completion date">
+                                    <div className="card-body p-2">
+                                        <h4 className="mb-1">{loading ? '...' : workOrderStats.overdue}</h4>
+                                        <p className="mb-0 small">⏰ Overdue</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="col-md-4 mb-3">
-                                <div className="card text-center bg-dark text-white h-100" title="Orders created in the last 7 days">
-                                    <div className="card-body">
-                                        <h4>{loading ? '...' : workOrderStats.recentOrders}</h4>
-                                        <p className="mb-0">📅 This Week</p>
-                                        <small className="text-light opacity-75">Last 7 days</small>
+                            <div className="col-6 col-md-4 mb-3">
+                                <div className="card text-center bg-dark text-white h-100 p-2 p-md-3" title="Orders created in the last 7 days">
+                                    <div className="card-body p-2">
+                                        <h4 className="mb-1">{loading ? '...' : workOrderStats.recentOrders}</h4>
+                                        <p className="mb-0 small">📅 This Week</p>
                                     </div>
                                 </div>
                             </div>
@@ -235,41 +239,37 @@ const StaffDashboard = () => {
 
                         {/* Activity & Billing Row */}
                         <div className="row">
-                            <div className="col-md-3 mb-3">
-                                <div className="card text-center border-primary h-100" title="Number of unique doctors with active orders">
-                                    <div className="card-body">
-                                        <h4 className="text-primary">{loading ? '...' : workOrderStats.activeDoctors}</h4>
-                                        <p className="mb-0">👨‍⚕️ Active Doctors</p>
-                                        <small className="text-muted">With pending orders</small>
+                            <div className="col-6 col-md-3 mb-3">
+                                <div className="card text-center border-primary h-100 p-2" title="Number of unique doctors with active orders">
+                                    <div className="card-body p-2">
+                                        <h4 className="text-primary mb-1">{loading ? '...' : workOrderStats.activeDoctors}</h4>
+                                        <p className="mb-0 small">👨‍⚕️ Doctors</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="col-md-3 mb-3">
-                                <div className="card text-center border-success h-100" title="Total bills created in the system">
-                                    <div className="card-body">
-                                        <h4 className="text-success">{loading ? '...' : billStats.totalBills}</h4>
-                                        <p className="mb-0">💰 Total Bills</p>
-                                        <small className="text-muted">All time bills</small>
+                            <div className="col-6 col-md-3 mb-3">
+                                <div className="card text-center border-success h-100 p-2" title="Total bills created in the system">
+                                    <div className="card-body p-2">
+                                        <h4 className="text-success mb-1">{loading ? '...' : billStats.totalBills}</h4>
+                                        <p className="mb-0 small">💰 Total Bills</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="col-md-3 mb-3">
-                                <div className="card text-center border-warning h-100" title="Bills awaiting payment">
-                                    <div className="card-body">
-                                        <h4 className="text-warning">{loading ? '...' : billStats.pendingBills}</h4>
-                                        <p className="mb-0">⏳ Pending Bills</p>
-                                        <small className="text-muted">Awaiting payment</small>
+                            <div className="col-6 col-md-3 mb-3">
+                                <div className="card text-center border-warning h-100 p-2" title="Bills awaiting payment">
+                                    <div className="card-body p-2">
+                                        <h4 className="text-warning mb-1">{loading ? '...' : billStats.pendingBills}</h4>
+                                        <p className="mb-0 small">⏳ Pending Bills</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="col-md-3 mb-3">
-                                <div className="card text-center border-info h-100" title="Orders currently undergoing revisions">
-                                    <div className="card-body">
-                                        <h4 className="text-info">
+                            <div className="col-6 col-md-3 mb-3">
+                                <div className="card text-center border-info h-100 p-2" title="Orders currently undergoing revisions">
+                                    <div className="card-body p-2">
+                                        <h4 className="text-info mb-1">
                                             {loading ? '...' : workOrderStats.revisionsInProgress}
                                         </h4>
-                                        <p className="mb-0">� Revisions in Progress</p>
-                                        <small className="text-muted">Orders being revised</small>
+                                        <p className="mb-0 small"> Revisions</p>
                                     </div>
                                 </div>
                             </div>

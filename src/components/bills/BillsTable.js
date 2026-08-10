@@ -40,7 +40,7 @@ const BillsTable = ({
                                 />
                             </div>
                         </th>
-                        <th>Serial #</th>
+                        <th>Job Number</th>
                         <th>Doctor</th>
                         <th>Patient</th>
                         <th>Description</th>

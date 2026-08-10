@@ -138,7 +138,84 @@ export const generateCompanyHeader = () => `
     </div>
 `;
 
+export const printHtmlContent = (htmlContent) => {
+    return new Promise((resolve) => {
+        const rootNode = document.getElementById('root');
+        
+        // Hide the main app manually so the print dialog has no choice but to print our container
+        if (rootNode) {
+            rootNode.style.display = 'none';
+        }
 
+        // Create container for print content
+        const printContainer = document.createElement('div');
+        printContainer.id = 'mobile-print-container';
+        
+        // Wrap content to safely inject
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = htmlContent;
+        printContainer.appendChild(wrapper);
+
+        // Add a manual close button just in case the mobile browser gets stuck
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '❌ Close Print View';
+        closeBtn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; background: #dc3545; color: white; border: none; border-radius: 8px; font-weight: bold; z-index: 999999; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 16px;';
+        printContainer.appendChild(closeBtn);
+
+        // Add print-specific styles to format the container and hide the close button during print
+        const printStyle = document.createElement('style');
+        printStyle.id = 'mobile-print-style';
+        printStyle.innerHTML = `
+            #mobile-print-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                min-height: 100vh;
+                background: white;
+                z-index: 99999;
+            }
+            @media print {
+                button { display: none !important; }
+            }
+        `;
+        
+        document.head.appendChild(printStyle);
+        document.body.appendChild(printContainer);
+
+        let cleanedUp = false;
+        const cleanup = () => {
+            if (cleanedUp) return;
+            cleanedUp = true;
+            if (document.body.contains(printContainer)) {
+                document.body.removeChild(printContainer);
+            }
+            if (document.head.contains(printStyle)) {
+                document.head.removeChild(printStyle);
+            }
+            if (rootNode) {
+                rootNode.style.display = '';
+            }
+            window.removeEventListener('afterprint', cleanup);
+            resolve();
+        };
+        
+        closeBtn.onclick = cleanup;
+
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // Android Chrome fires 'afterprint' immediately, destroying the print preview.
+        // So on mobile, we rely exclusively on the manual close button!
+        if (!isMobile) {
+            window.addEventListener('afterprint', cleanup);
+        }
+
+        // Wait for images to load before triggering print
+        setTimeout(() => {
+            window.print();
+        }, 500);
+    });
+};
 
 export const handleSingleBillPrint = async (bill) => {
     console.log('=== SINGLE BILL PRINT DEBUG ===');
@@ -186,7 +263,7 @@ export const handleSingleBillPrint = async (bill) => {
     console.log('Final tooth_numbers stringified:', JSON.stringify(toothNumbers));
     console.log('================================');
     
-    const printWindow = window.open('', '', 'width=800,height=600');
+    // using printHtmlContent
     
     const billContent = `
         <!DOCTYPE html>
@@ -243,13 +320,11 @@ export const handleSingleBillPrint = async (bill) => {
         </html>
     `;
     
-    printWindow.document.write(billContent);
-    printWindow.document.close();
-    printWindow.print();
+    await printHtmlContent(billContent);
 };
 
 export const handleGroupedBillPrint = async (bill) => {
-    const printWindow = window.open('', '', 'width=800,height=600');
+    // using printHtmlContent
     
     try {
         const response = await dentalLabService.getBillWorkOrders(bill.id);
@@ -394,24 +469,16 @@ export const handleGroupedBillPrint = async (bill) => {
             </html>
         `;
         
-        printWindow.document.write(billContent);
-        printWindow.document.close();
-        printWindow.print();
+        await printHtmlContent(billContent);
         
     } catch (error) {
         console.error('Error loading work orders for bill:', error);
-        printWindow.close();
     }
 };
 
 // Print initial bill (without amount) - for staff use
 export const printInitialBill = async (bill) => {
-    const printWindow = window.open('', '', 'width=800,height=600');
-
-    if (!printWindow) {
-        alert('Popup blocked! Please allow popups for this site.');
-        return;
-    }
+    // using printHtmlContent
 
     try {
         console.log('Printing initial bill (without amount):', bill);
@@ -505,13 +572,10 @@ export const printInitialBill = async (bill) => {
             </html>
         `;
         
-        printWindow.document.write(billContent);
-        printWindow.document.close();
-        printWindow.print();
+        await printHtmlContent(billContent);
         
     } catch (error) {
         console.error('Error printing initial bill:', error);
-        printWindow.close();
         alert('Error printing initial bill: ' + error.message);
     }
 };
@@ -533,12 +597,7 @@ export const handleBulkBillPrint = async (bills) => {
         return;
     }
 
-    const printWindow = window.open('', '', 'width=800,height=600');
-    
-    if (!printWindow) {
-        alert('Popup blocked! Please allow popups for this site.');
-        return;
-    }
+    // using printHtmlContent
     try {
         // Generate content for each bill
         const billContents = await Promise.all(bills.map(async (bill, index) => {
@@ -688,13 +747,10 @@ export const handleBulkBillPrint = async (bills) => {
             </html>
         `;
         
-        printWindow.document.write(bulkBillContent);
-        printWindow.document.close();
-        printWindow.print();
+        await printHtmlContent(bulkBillContent);
         
     } catch (error) {
         console.error('Error in bulk bill printing:', error);
-        printWindow.close();
         alert('Error printing bills: ' + error.message);
     }
 };

@@ -403,53 +403,55 @@ const AdminDashboard = () => {
                                     </li>
                                 </ul>
                             </div>
-                        </div>
-
                         {/* Monthly Billing Statistics Cards */}
                         <div className="row mb-4">
-                            <div className="col-md-3">
-                                <div className="card text-white bg-primary admin-card">
-                                    <div className="card-header d-flex justify-content-between">
-                                        <span>This Month's Orders</span>
+                            <div className="col-6 col-md-4 mb-3">
+                                <div className="card text-white bg-primary admin-card h-100">
+                                    <div className="card-header d-flex justify-content-between p-2 p-md-3">
+                                        <span className="small d-none d-md-inline">This Month's Orders</span>
+                                        <span className="small d-md-none">Month's Orders</span>
                                         <span>📊</span>
                                     </div>
-                                    <div className="card-body">
-                                        <h2 className="card-title">{realtimeStats.currentMonthOrders}</h2>
-                                        <p className="card-text">Work orders this month</p>
+                                    <div className="card-body p-2 p-md-3">
+                                        <h2 className="card-title mb-1">{realtimeStats.currentMonthOrders}</h2>
+                                        <p className="card-text small mb-0 d-none d-md-block">Work orders this month</p>
                                         <small className="opacity-75">Total: {stats.totalWorkOrders}</small>
                                     </div>
                                 </div>
                             </div>
-                            <div className="col-md-3">
-                                <div className="card text-white bg-success admin-card">
-                                    <div className="card-header d-flex justify-content-between">
-                                        <span>Monthly Revenue</span>
+                            <div className="col-6 col-md-4 mb-3">
+                                <div className="card text-white bg-success admin-card h-100">
+                                    <div className="card-header d-flex justify-content-between p-2 p-md-3">
+                                        <span className="small d-none d-md-inline">Monthly Revenue</span>
+                                        <span className="small d-md-none">Revenue</span>
                                         <span>💰</span>
                                     </div>
-                                    <div className="card-body">
-                                        <h2 className="card-title">₹{realtimeStats.currentMonthRevenue.toFixed(2)}</h2>
-                                        <p className="card-text">Revenue this month</p>
-                                        <small className="opacity-75">From completed bills</small>
+                                    <div className="card-body p-2 p-md-3">
+                                        <h2 className="card-title mb-1">₹{realtimeStats.currentMonthRevenue.toFixed(2)}</h2>
+                                        <p className="card-text small mb-0 d-none d-md-block">Revenue this month</p>
+                                        <small className="opacity-75 d-none d-md-block">From completed bills</small>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="col-md-3">
-                                <div className="card text-white bg-info admin-card">
-                                    <div className="card-header d-flex justify-content-between">
-                                        <span>Active Doctors</span>
-                                        <span>�‍⚕️</span>
+                            <div className="col-6 col-md-4 mb-3">
+                                <div className="card text-white bg-info admin-card h-100">
+                                    <div className="card-header d-flex justify-content-between p-2 p-md-3">
+                                        <span className="small d-none d-md-inline">Active Doctors</span>
+                                        <span className="small d-md-none">Doctors</span>
+                                        <span>‍⚕️</span>
                                     </div>
-                                    <div className="card-body">
-                                        <h2 className="card-title">{realtimeStats.totalDoctors}</h2>
-                                        <p className="card-text">Doctors in system</p>
-                                        <small className="opacity-75">Total unique doctors</small>
+                                    <div className="card-body p-2 p-md-3">
+                                        <h2 className="card-title mb-1">{realtimeStats.totalDoctors}</h2>
+                                        <p className="card-text small mb-0 d-none d-md-block">Doctors in system</p>
+                                        <small className="opacity-75 d-none d-md-block">Total unique doctors</small>
                                     </div>
-                                </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        {/* Admin Actions */}
+                {/* Admin Actions */}
                         <div className="row">
                             <div className="col-lg-4 col-md-6">
                                 <div className="card admin-action-card">

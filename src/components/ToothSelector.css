@@ -29,73 +29,87 @@
 }
 
 .dental-chart {
-    max-width: 800px;
-    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    justify-content: center;
     background: #f8f9fa;
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 2rem;
     border: 2px solid #e9ecef;
 }
 
-.jaw {
-    display: flex;
-    gap: 2rem;
-    margin-bottom: 2rem;
-    justify-content: center;
+.mouth-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 0.6 / 1;
+    margin: 0 auto;
 }
 
-.jaw:last-child {
-    margin-bottom: 0;
-}
-
-.quadrant {
-    flex: 1;
-    max-width: 300px;
-}
-
-.quadrant-label {
-    text-align: center;
+.mouth-center-label {
+    position: absolute;
+    top: 48%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.8rem;
     font-weight: bold;
-    margin-bottom: 0.5rem;
-    color: #495057;
-    font-size: 0.9rem;
-}
-
-.teeth-row {
-    display: flex;
-    gap: 4px;
-    justify-content: center;
-    flex-wrap: wrap;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0.5;
 }
 
 .tooth-btn {
-    width: 35px;
-    height: 35px;
-    border: 2px solid #dee2e6;
-    background: white;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: #495057;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    position: absolute;
+    transform: translate(-50%, -50%);
     display: flex;
     align-items: center;
     justify-content: center;
+    background: white;
+    border: 2px solid #dee2e6;
+    color: #495057;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Base shapes based on tooth type */
+.tooth-incisor {
+    width: 32px;
+    height: 38px;
+}
+.tooth-premolar {
+    width: 36px;
+    height: 34px;
+}
+.tooth-molar {
+    width: 42px;
+    height: 40px;
+}
+
+/* Anatomical border radii */
+.upper-tooth {
+    border-radius: 4px 4px 14px 14px;
+}
+.lower-tooth {
+    border-radius: 14px 14px 4px 4px;
 }
 
 .tooth-btn:hover:not(:disabled) {
     border-color: #007bff;
     background: #e3f2fd;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,123,255,0.2);
+    transform: translate(-50%, -55%) scale(1.1);
+    box-shadow: 0 4px 8px rgba(0,123,255,0.25);
+    z-index: 10;
 }
 
 .tooth-btn.selected {
     background: #007bff;
     border-color: #0056b3;
     color: white;
-    box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+    box-shadow: 0 4px 12px rgba(0,123,255,0.4);
+    z-index: 5;
 }
 
 .tooth-btn:disabled {

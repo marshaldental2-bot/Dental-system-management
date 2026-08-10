@@ -20,6 +20,7 @@ const BatchWorkOrderForm = ({ isAdmin = false }) => {
     const [workOrders, setWorkOrders] = useState([
         {
             id: 1,
+            serial_number: '',
             patient_name: '',
             product_quality: '',
             product_shade: '',
@@ -306,6 +307,19 @@ const BatchWorkOrderForm = ({ isAdmin = false }) => {
                                             )}
                                         </div>
                                         <div className="card-body">
+                                            <div className="row mb-3">
+                                                <div className="col-md-12">
+                                                    <label className="form-label">Job Number *</label>
+                                                    <input
+                                                        type="text"
+                                                        className="form-control"
+                                                        value={order.serial_number}
+                                                        onChange={(e) => handleWorkOrderChange(index, 'serial_number', e.target.value)}
+                                                        placeholder="e.g. 1004"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
                                             <div className="row">
                                                 <div className="col-md-3">
                                                     <div className="mb-3">

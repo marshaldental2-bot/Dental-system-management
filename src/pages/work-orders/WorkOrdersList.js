@@ -254,7 +254,9 @@ const WorkOrdersList = ({ isAdmin = false }) => {
     const handleEditOrder = (order) => {
         setEditingOrder(order.id);
         setEditData({
-            feedback: order.feedback || ''
+            feedback: order.feedback || '',
+            product_quality: order.product_quality || '',
+            product_shade: order.product_shade || ''
         });
         // Load trials for this work order when editing
         loadTrialsForWorkOrder(order.id);
@@ -828,13 +830,21 @@ const handleSaveEdit = async (orderId) => {
         
         // Overdue filter
         if (currentFilters.overdue) {
-            const now = new Date();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
             filtered = filtered.filter(order => {
-                if (!order.expected_complete_date || order.status === 'completed') return false;
-                const expectedDate = new Date(order.expected_complete_date);
-                return expectedDate < now;
+                if (order.status === 'completed' || order.status === 'cancelled') return false;
+                
+                if (order.expected_complete_date) {
+                    const expectedDate = new Date(order.expected_complete_date);
+                    return expectedDate < today;
+                } else if (order.order_date) {
+                    const orderDate = new Date(order.order_date);
+                    const daysOld = (today - orderDate) / (1000 * 60 * 60 * 24);
+                    return daysOld > 7;
+                }
+                return false;
             });
-            
         }
         
        if (currentFilters.urgentOnly) {
@@ -1123,11 +1133,11 @@ const handleSaveEdit = async (orderId) => {
             <div className="row">
                 <div className="col-12">
                     <div className="card">
-                        <div className="card-header d-flex justify-content-between align-items-center">
-                            <h4>🦷 Work Orders Management</h4>
-                            <div>
+                        <div className="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 gap-md-0">
+                            <h4 className="mb-0">🦷 Work Orders Management</h4>
+                            <div className="d-grid gap-2 d-md-flex justify-content-md-end">
                                 <button 
-                                    className="btn btn-success me-2" 
+                                    className="btn btn-success" 
                                     onClick={() => navigate('/work-order-form')}
                                 >
                                     + New Work Order
@@ -1151,40 +1161,40 @@ const handleSaveEdit = async (orderId) => {
                                 </div>
                             )}
                              {/* Help text for unified billing and returns */}
-                            <div className="alert alert-info">
+                            <div className="alert alert-info py-2 px-3 mb-2">
                                 <div className="d-flex justify-content-between align-items-center">
-                                    <small>
+                                    <div className="small" style={{fontSize: '0.8rem'}}>
                                         <strong>💡 Workflow:</strong> 
-                                        Select completed work orders to create bills instantly. 
-                                        <span className="text-primary ms-1">
+                                        <span className="d-none d-md-inline"> Select completed work orders to create bills instantly.</span>
+                                        <div className="d-md-inline mt-1 mt-md-0 text-primary ms-md-1">
                                             All selected orders must be from the same doctor.
-                                        </span>
-                                        <span className="text-warning ms-2">
+                                        </div>
+                                        <div className="d-md-inline mt-1 mt-md-0 text-warning ms-md-2">
                                             ↩️ Use return button on billed orders if product needs revision.
-                                        </span>
+                                        </div>
                                         {Object.keys(batchGroups).length > 0 && (
-                                            <span className="ms-2">
-                                                🎯 Use "Batch" buttons to quickly select all orders from a batch.
-                                            </span>
+                                            <div className="d-md-inline mt-1 mt-md-0 text-muted ms-md-2">
+                                                🎯 Use "Batch" buttons to select a batch.
+                                            </div>
                                         )}
-                                    </small>
+                                    </div>
                                 </div>
                             </div>
                             {/* Help text for unified billing */}
-                            <div className="alert alert-info">
+                            <div className="alert alert-info py-2 px-3 mb-3">
                                 <div className="d-flex justify-content-between align-items-center">
-                                    <small>
+                                    <div className="small" style={{fontSize: '0.8rem'}}>
                                         <strong>💡 Direct Billing:</strong> 
-                                        Select any completed work orders using checkboxes to create a grouped bill instantly. 
-                                        <span className="text-primary ms-1">
+                                        <span className="d-none d-md-inline"> Select any completed work orders using checkboxes to create a grouped bill instantly.</span>
+                                        <div className="d-md-inline mt-1 mt-md-0 text-primary ms-md-1">
                                             All selected orders must be from the same doctor.
-                                        </span>
+                                        </div>
                                         {Object.keys(batchGroups).length > 0 && (
-                                            <span className="ms-2">
-                                                🎯 Use "Batch" buttons to quickly select all orders from a batch.
-                                            </span>
+                                            <div className="d-md-inline mt-1 mt-md-0 text-muted ms-md-2">
+                                                🎯 Use "Batch" buttons to select a batch.
+                                            </div>
                                         )}
-                                    </small>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1201,7 +1211,7 @@ const handleSaveEdit = async (orderId) => {
                                                 <input
                                                     type="text"
                                                     className="form-control"
-                                                    placeholder="Search by doctor name, patient name, or serial number..."
+                                                    placeholder="Search by doctor name, patient name, or job number..."
                                                     value={searchQuery}
                                                     onChange={(e) => handleSearch(e.target.value)}
                                                     autoComplete="off"
@@ -1220,6 +1230,12 @@ const handleSaveEdit = async (orderId) => {
                                             </div>
                                         </div>
                                         <div className="col-md-4 text-end">
+                                            <button
+                                                className={`btn me-2 ${filters.overdue ? 'btn-dark text-white' : 'btn-outline-dark'}`}
+                                                onClick={() => handleFilterChange('overdue', !filters.overdue)}
+                                            >
+                                                ⏰ Overdue
+                                            </button>
                                             <button
                                                 className={`btn btn-outline-primary me-2 ${getActiveFilterCount() > 0 ? 'btn-primary text-white' : ''}`}
                                                 onClick={() => setShowFilters(!showFilters)}

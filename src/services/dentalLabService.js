@@ -140,9 +140,7 @@ const createWorkOrder = async (workOrderData) => {
         };
 
         // ... (keep the rest of the function as is)
-        if ('serial_number' in cleanedData) {
-            delete cleanedData.serial_number;
-        }
+        // Allow manual serial_number/job number, fallback to auto-generation handled by DB
         if ('id' in cleanedData) {
             delete cleanedData.id;
         }
@@ -225,7 +223,6 @@ const updateWorkOrder = async (id, updates, isAdminOverride = false) => {
 
         // Remove fields that shouldn't be updated directly (except for admin override)
         if (!isAdmin) {
-            delete cleanedUpdates.serial_number;
             delete cleanedUpdates.created_at;
             delete cleanedUpdates.created_by;
         }

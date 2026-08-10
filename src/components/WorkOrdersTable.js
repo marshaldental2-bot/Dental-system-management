@@ -49,6 +49,45 @@ const WorkOrdersTable = ({
 }) => {
     const [expandedOrders, setExpandedOrders] = React.useState(new Set());
     
+    // Helper function to check if order is overdue
+    const checkIsOverdue = (order) => {
+        if (order.status === 'completed' || order.status === 'cancelled') return false;
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (order.expected_complete_date) {
+            const expectedDate = new Date(order.expected_complete_date);
+            return expectedDate < today;
+        } else if (order.order_date) {
+            // Fallback: If no expected date, flag as overdue if older than 7 days
+            const orderDate = new Date(order.order_date);
+            const daysOld = (today - orderDate) / (1000 * 60 * 60 * 24);
+            return daysOld > 7;
+        }
+        return false;
+    };
+
+    const productQualitySuggestions = [
+        'Rpd', 'Metal', 'Metal fc', 'Pfm', 'Dmls pfm', 'Cadcam pfm',
+        'Zirconia', 'Moonlith', 'Bruxzir', 'U/Danture', 'L/Danture',
+        'U/L/danture', 'U/L/imported/Danture', 'Temporary', 'E-max',
+        'Implant pfm', 'U/hybrid/danture', 'L/hybrid/danture', 
+        'U/L/hybrid/danture', 'U/implant/pfm', 'L/implant/pfm', 'U/L/implant/pfm'
+    ];
+
+    const shadeSuggestions = {
+        vita3d: ['1m1', '1m2', '2L1.5', '2L2.5', '2M1', '2M2', '2M3', '2R1.5', '2R2.5', 
+                 '3L1.5', '3L2.5', '3M1', '3M2', '3M3', '3R1.5', '3R2.5', '4L1.5', '4L2.5', 
+                 '4M1', '4M2', '4R1.5', '4R2.5', '4M3', '5M1', '5M2', '5M3'],
+        classical: ['B1', 'A1', 'B2', 'B2/B3', 'A2', 'A2/A3', 'C3', 'B3', 'C1', 'A3', 
+                    'A3.5', 'A4', 'D2', 'C2', 'B4', 'C4','others'],
+        combinations: ['A1+A2', 'A2+A3', 'B1+B2', 'B2+B3', 'A3+A4', 'C1+C2', 'A1+B1', 
+                       '2M1+2M2', '3M1+3M2', '2L1.5+2L2.5', 'A2+2M2', 'B2+3M2']
+    };
+
+    const allShades = [...shadeSuggestions.vita3d, ...shadeSuggestions.classical, ...shadeSuggestions.combinations];
+
     // Helper function to get status badge
 const getStatusBadge = (status) => {
         switch (status) {
@@ -130,6 +169,16 @@ const getStatusBadge = (status) => {
     const isExpanded = (orderId) => expandedOrders.has(orderId);
     return (
         <div className="work-orders-container">
+            <datalist id="edit-quality-suggestions">
+                {productQualitySuggestions.map((suggestion, i) => (
+                    <option key={i} value={suggestion} />
+                ))}
+            </datalist>
+            <datalist id="edit-shade-suggestions">
+                {allShades.map((shade, i) => (
+                    <option key={i} value={shade} />
+                ))}
+            </datalist>
             {/* Admin Mode Indicator */}
             {isAdmin && (
                 <div className="alert alert-warning mb-3" role="alert">
@@ -146,7 +195,7 @@ const getStatusBadge = (status) => {
             {/* Mobile/Tablet Card View */}
             <div className="d-lg-none">
                 {filteredWorkOrders.map((order) => (
-                    <div key={order.id} className={`card mb-3 shadow-sm ${isExpanded(order.id) ? 'expanded' : ''}`}>
+                    <div key={order.id} className={`card mb-3 shadow-sm ${isExpanded(order.id) ? 'expanded' : ''} ${checkIsOverdue(order) ? 'border-danger bg-danger bg-opacity-10' : ''}`}>
                         <div 
                             className={`card-header d-flex justify-content-between align-items-center py-2 cursor-pointer ${isExpanded(order.id) ? 'expanded' : ''}`}
                             onClick={() => toggleExpanded(order.id)}
@@ -176,6 +225,9 @@ const getStatusBadge = (status) => {
                                             </span>
                                         )}
                                     </div>
+                                    <div className="small text-muted mt-1">
+                                        Date: {formatDate(order.order_date)}
+                                    </div>
                                     
                                     <div className="small text-muted">
                                         <strong>Dr. {order.doctor_name}</strong>
@@ -183,6 +235,7 @@ const getStatusBadge = (status) => {
                                 </div>
                             </div>
                                  {order.is_urgent && <span className="badge bg-danger ms-2">🔥 Urgent</span>}
+                                 {checkIsOverdue(order) && <span className="badge bg-dark ms-2">⏰ Overdue</span>}
                             <div className="d-flex align-items-center">
                                 <span className={`badge me-2 ${getStatusBadge(order.status).class}`}>
                                     {getStatusBadge(order.status).text}
@@ -203,9 +256,34 @@ const getStatusBadge = (status) => {
                                 <div className="col-6">
                                     <div className="small text-muted mb-1">Product:</div>
                                     <div>
-                                        <strong>{order.product_quality}</strong>
-                                        {order.product_shade && (
-                                            <div className="small text-muted">Shade: {order.product_shade}</div>
+                                        {editingOrder === order.id && order.status !== 'completed' ? (
+                                            <>
+                                                <input
+                                                    type="text"
+                                                    className="form-control form-control-sm mb-1"
+                                                    name="product_quality"
+                                                    value={editData.product_quality !== undefined ? editData.product_quality : (order.product_quality || '')}
+                                                    onChange={handleEditInputChange}
+                                                    placeholder="Product Quality"
+                                                    list="edit-quality-suggestions"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    className="form-control form-control-sm"
+                                                    name="product_shade"
+                                                    value={editData.product_shade !== undefined ? editData.product_shade : (order.product_shade || '')}
+                                                    onChange={handleEditInputChange}
+                                                    placeholder="Product Shade"
+                                                    list="edit-shade-suggestions"
+                                                />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <strong>{order.product_quality}</strong>
+                                                {order.product_shade && (
+                                                    <div className="small text-muted">Shade: {order.product_shade}</div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </div>
@@ -376,10 +454,7 @@ const getStatusBadge = (status) => {
                             <div className="card-body border-top bg-light py-2">
                                 <div className="row small">
                                     <div className="col-6">
-                                        <div className="mb-2">
-                                            <span className="text-muted">Order Date:</span><br/>
-                                            {formatDate(order.order_date)}
-                                        </div>
+                                        {/* Order date moved to main row */}
                                         {order.completion_date && (
                                             <div className="mb-2">
                                                 <span className="text-muted">Completed:</span><br/>
@@ -684,8 +759,8 @@ const getStatusBadge = (status) => {
                                         }}
                                     />
                                 </th>
-                                <th style={{width: '120px'}}>Serial #</th>
-                                <th style={{width: '120px'}}>Doctor</th>
+                                <th style={{width: '120px'}}>Job Number</th>
+                                <th style={{width: '150px'}}>Doctor</th>
                                 <th style={{width: '120px'}}>Patient</th>
                                 <th style={{width: '140px'}}>Product</th>
                                 <th style={{width: '100px'}}>Status</th>
@@ -697,7 +772,7 @@ const getStatusBadge = (status) => {
                         <tbody>
                             {filteredWorkOrders.map((order) => (
                                 <React.Fragment key={order.id}>
-                                    <tr className={`${editingOrder === order.id ? 'table-warning' : ''} ${isExpanded(order.id) ? 'expanded' : ''}`}>
+                                    <tr className={`${editingOrder === order.id ? 'table-warning' : (checkIsOverdue(order) ? 'table-danger' : '')} ${isExpanded(order.id) ? 'expanded' : ''}`}>
                                         <td>
                                             <input
                                                 type="checkbox"
@@ -712,6 +787,7 @@ const getStatusBadge = (status) => {
                                                 <strong className="text-primary">{order.serial_number}</strong>
                                                 <RevisionStatusBadge order={order} formatDate={formatDate} />
                                                 {order.is_urgent && <span className="badge bg-danger ms-2">🔥 Urgent</span>}
+                                                {checkIsOverdue(order) && <span className="badge bg-dark ms-2">⏰ Overdue</span>}
                                                 {order.batch_id && (
                                                     <div>
                                                         <span className="badge bg-info badge-sm">
@@ -719,6 +795,9 @@ const getStatusBadge = (status) => {
                                                         </span>
                                                     </div>
                                                 )}
+                                                <div className="small text-muted mt-1">
+                                                    Date: {formatDate(order.order_date)}
+                                                </div>
                                             </div>
                                         </td>
                                         <td>
@@ -737,9 +816,34 @@ const getStatusBadge = (status) => {
                                             <div>
                                                 <div className="small text-muted">Product:</div>
                                                 <div>
-                                                    <strong>{order.product_quality}</strong>
-                                                    {order.product_shade && (
-                                                        <div className="small text-muted">Shade: {order.product_shade}</div>
+                                                    {editingOrder === order.id && order.status !== 'completed' ? (
+                                                        <>
+                                                            <input
+                                                                type="text"
+                                                                className="form-control form-control-sm mb-1"
+                                                                name="product_quality"
+                                                                value={editData.product_quality !== undefined ? editData.product_quality : (order.product_quality || '')}
+                                                                onChange={handleEditInputChange}
+                                                                placeholder="Product Quality"
+                                                                list="edit-quality-suggestions"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                className="form-control form-control-sm"
+                                                                name="product_shade"
+                                                                value={editData.product_shade !== undefined ? editData.product_shade : (order.product_shade || '')}
+                                                                onChange={handleEditInputChange}
+                                                                placeholder="Product Shade"
+                                                                list="edit-shade-suggestions"
+                                                            />
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <strong>{order.product_quality}</strong>
+                                                            {order.product_shade && (
+                                                                <div className="small text-muted">Shade: {order.product_shade}</div>
+                                                            )}
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>
@@ -912,10 +1016,7 @@ const getStatusBadge = (status) => {
                                                         
                                                         {/* Column 1: Dates */}
                                                         <div style={{ flex: 1 }}>
-                                                            <div className="mb-2">
-                                                                <span className="text-muted">Order Date:</span><br/>
-                                                                <strong>{formatDate(order.order_date)}</strong>
-                                                            </div>
+                                                            {/* Order date moved to main row */}
                                                             {order.expected_complete_date && (
                                                                 <div className="mb-2">
                                                                     <span className="text-muted">Expected Complete:</span><br/>

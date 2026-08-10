@@ -3,6 +3,7 @@ import { dentalLabService } from '../../services/dentalLabService';
 import { authService } from '../../services/supabaseAuthService';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/shared/PageHeader';
+import { printHtmlContent } from '../../components/bills/BillPrintUtils';
 
 const MonthlyBillingPage = () => {
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
@@ -562,9 +563,7 @@ const MonthlyBillingPage = () => {
             `;
         };
 
-        return new Promise((resolve) => {
-            const printWindow = window.open('', '_blank', 'width=800,height=600');
-            const monthName = new Date(billData.month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const monthName = new Date(billData.month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
             
             const htmlContent = `<!DOCTYPE html>
 <html>
@@ -896,7 +895,7 @@ table {
      <table>
         <thead>
             <tr>
-                <th class="serial-col">Serial #</th>
+                <th class="serial-col">Job Number</th>
                 <th class="date-col">Date</th>
                 <th class="patient-col">Patient</th>
                 <th class="tooth-col">Quadrants</th>
@@ -932,19 +931,7 @@ table {
 </body>
 </html>`;
             
-            printWindow.document.write(htmlContent);
-            printWindow.document.close();
-            
-            // Wait for content to load before printing
-            printWindow.onload = function() {
-                setTimeout(() => {
-                    printWindow.focus();
-                    printWindow.print();
-                    printWindow.close();
-                    resolve();
-                }, 500);
-            };
-        });
+        await printHtmlContent(htmlContent);
     };
 
     const regenerateBill = async (billId) => {
@@ -1032,8 +1019,8 @@ table {
                             {/* Work Orders Table */}
                             {workOrders.length > 0 && (
                                 <div className="card mb-4">
-                                    <div className="card-header d-flex justify-content-between align-items-center">
-                                        <h6>📋 Work Orders for {selectedDoctor} - {new Date(selectedMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h6>
+                                    <div className="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 gap-md-0">
+                                        <h6 className="mb-0">📋 Work Orders for {selectedDoctor} - {new Date(selectedMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h6>
                                         <div>
                                             <span className="badge bg-info me-2">{workOrders.length} orders</span>
                                             <span className="badge bg-success">Total: ₹{totalAmount.toFixed(2)}</span>
@@ -1044,7 +1031,7 @@ table {
                                             <table className="table table-striped">
                                                 <thead>
                                                     <tr>
-                                                        <th>Serial #</th>
+                                                        <th>Job Number</th>
                                                         <th>Patient</th>
                                                         <th>Product Quality</th>
                                                         <th>Tooth Quadrants</th>

@@ -59,7 +59,7 @@ const BillFilters = ({
                         />
                     </div>
                     <div className="col-md-2">
-                        <label className="form-label">Serial #</label>
+                        <label className="form-label">Job Number</label>
                         <input
                             type="text"
                             className="form-control"

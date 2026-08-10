@@ -10,9 +10,9 @@ const PageHeader = ({
     const navigate = useNavigate();
 
     return (
-        <div className="card-header d-flex justify-content-between align-items-center">
-            <h4>{title}</h4>
-            <div className="action-buttons">
+        <div className="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 gap-md-0">
+            <h4 className="mb-0">{title}</h4>
+            <div className="action-buttons d-grid gap-2 d-md-flex">
                 {actions && actions}
                 {backPath && (
                     <button 
